@@ -1,0 +1,21 @@
+{
+    "name": "whatsapp-bot-scc",
+    "version": "1.0.0",
+    "description": "Bot de whatsapp para uso do Scc",
+    "main": "app.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node app.js"
+    },
+    "keywords": [
+        "bot",
+        "whatsapp",
+        "nodejs"
+    ],
+    "author": "Arthur Isvi",
+    "license": "ISC",
+    "dependencies": {
+        "qrcode-terminal": "^0.12.0",
+        "whatsapp-web.js": "^1.17.0"
+    }
+}
