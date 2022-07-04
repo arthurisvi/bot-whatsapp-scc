@@ -23,8 +23,15 @@ client.on("ready", () => {
 const API_URL = "https://api.cartolafc.globo.com/";
 
 client.on("message", (message) => {
+
+    if (message.body === "!menu") {
+        message.reply(
+            "🤖 *RoboSCCop* - O seu bot do cartola! 🎩\n\n_Olá, eu sou um robô criado para te manter informado sobre parciais e outras questões do Cartola FC via Whatsapp._\n\n📲 *Meu menu*\n!pontuacao _[nome do jogador]_\n!parcial _[nome do time]_\n!mais-escalados\n\n🎩 *Sobre o SCC*\nO SCC é uma organização responsável por gerenciar campeonatos premiados de Cartola FC.\n\nConfira 👇🏻\nhttps://sccartola.com/competicoes/sccvip.php\n\n👨🏻‍💻 *Contato do desenvolvedor*\nwa.me/5581996420780 (Arthur Isvi)"
+        );
+    }
+
     // pegar a pontuação de um jogador específico
-    if (message.body.includes(".pontuacao ")) {
+    if (message.body.includes("!pontuacao ")) {
         let arrayPesquisa = message.body.split(" ");
         let jogador = arrayPesquisa[1];
 
@@ -37,15 +44,15 @@ client.on("message", (message) => {
                     jogador.normalize("NFD").toLowerCase()
                 ) {
                     message.reply(
-                        `A pontuação do jogador ${jogadores[item].apelido} é: ${jogadores[item].pontuacao}`
+                        `A pontuação parcial do jogador ${jogadores[item].apelido} é: ${jogadores[item].pontuacao}`
                     );
                 }
             });
         });
     }
     // trazer a pontuação de um time especifico
-    else if (message.body.includes(".time")) {
-        let time = message.body.replace(".time", "").replace(/^./, "");
+    else if (message.body.includes("!parcial")) {
+        let time = message.body.replace("!parcial", "").replace(/^./, "");
         let slug = time.replace(/ /g, "-").toLowerCase();
 
         axios.get(API_URL + "times?q=" + slug).then((res) => {
@@ -98,12 +105,26 @@ client.on("message", (message) => {
                             }
 
                             message.reply(
-                                `A pontuação de ${nome_time} é: ${somaPontuacao} pontos`
+                                `A pontuação parcial de ${nome_time} é: ${somaPontuacao.toFixed(2)} pontos`
                             );
                         });
                     });
                 }
             });
         });
+    }
+    //pesquisar os mais escalados
+    else if (message.body === "!mais-escalados") {
+        axios.get(API_URL + "mercado/destaques").then((res) => {
+            var arrayMaisEscalados = [];
+
+            let maisEscalados = res.data;
+            Object.keys(maisEscalados).forEach((destaque) => {
+                arrayMaisEscalados.push(maisEscalados[destaque].Atleta.apelido);
+            })
+
+            let mensagem = arrayMaisEscalados.toString().replace(/,/g, "\n");
+            message.reply(`Os mais escalados da rodada são:\n\n${mensagem}`);
+        })
     }
 });
