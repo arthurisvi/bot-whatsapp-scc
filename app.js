@@ -33,7 +33,12 @@ client.on("message", (message) => {
     // pegar a pontuação de um jogador específico
     if (message.body.includes("!pontuacao ")) {
         let arrayPesquisa = message.body.split(" ");
-        let jogador = arrayPesquisa[1];
+        let jogador = "";
+        if (arrayPesquisa.length === 2) {
+            jogador = arrayPesquisa[1];
+        } else if (arrayPesquisa.length === 3) {
+            jogador = `${arrayPesquisa[1]} ${arrayPesquisa[2]}`
+        }
 
         axios.get(API_URL + "atletas/pontuados").then((res) => {
             let jogadores = res.data.atletas;
