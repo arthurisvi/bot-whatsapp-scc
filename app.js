@@ -133,15 +133,12 @@ client.on("message", async(message) => {
                                                             jogadoresPontuacao[jogador].posicao_id
                                                         ) {
                                                             if (
-                                                                escalacao[jogadorEscalado].atleta_id ===
-                                                                capitao
+                                                                escalacao[jogadorEscalado].atleta_id === capitao
                                                             ) {
                                                                 jogadoresPontuacao[jogador].pontuacao =
                                                                     jogadoresPontuacao[jogador].pontuacao * 2;
                                                             }
-                                                            filtroJogadores.push(
-                                                                jogadoresPontuacao[jogador]
-                                                            );
+                                                            filtroJogadores.push(jogadoresPontuacao[jogador]);
 
                                                             const futebolista = {
                                                                 posicao_id: escalacao[jogadorEscalado].posicao_id,
@@ -173,13 +170,12 @@ client.on("message", async(message) => {
 
                                                 let somaPontuacao = 0;
                                                 for (pontuacao in filtroJogadores) {
-                                                    somaPontuacao +=
-                                                        filtroJogadores[pontuacao].pontuacao;
+                                                    somaPontuacao += filtroJogadores[pontuacao].pontuacao;
                                                 }
                                                 message.reply(
                                                     `A pontuação parcial de ${nome_time} é: ${somaPontuacao.toFixed(
-                              2
-                            )} pontos`
+                            2
+                          )} pontos`
                                                 );
                                             })
                                             .catch((err) => {
@@ -222,9 +218,7 @@ client.on("message", async(message) => {
                 });
 
                 let mensagem = arrayMaisEscalados.toString().replace(/,/g, "\n");
-                message.reply(
-                    `👕 Os *mais escalados* da rodada são:\n\n${mensagem}`
-                );
+                message.reply(`👕 Os *mais escalados* da rodada são:\n\n${mensagem}`);
             })
             .catch((err) => {
                 message.reply(
@@ -238,60 +232,67 @@ client.on("message", async(message) => {
         let time = message.body.replace("!info", "").replace(/^./, "");
         let slug = time.replace(/ /g, "-").toLowerCase();
 
+        axios
+            .get(env.API_URL + "mercado/status")
+            .then((res) => {
+                let rodadaAtual = res.data.rodada_atual;
 
-        axios.get(env.API_URL + "mercado/status").then((res) => {
+                axios
+                    .get(env.API_URL + "times?q=" + slug)
+                    .then(async(res) => {
+                        let timeCartola = res.data.filter((item) => item.slug === slug);
 
-            let rodadaAtual = res.data.rodada_atual;
+                        if (timeCartola) {
+                            let time_id = timeCartola[0].time_id;
 
-            axios
-                .get(env.API_URL + "times?q=" + slug)
-                .then(async(res) => {
-                    let timeCartola = res.data;
-                    let time_id = timeCartola[0].time_id;
+                            axios
+                                .get(env.API_URL + "time/id/" + time_id)
+                                .then(async(res) => {
+                                    let pontuacaoGeral = res.data.pontos_campeonato;
+                                    let patrimonio = res.data.patrimonio;
+                                    let nomeCartoleiro = res.data.time.nome_cartola;
+                                    let nomeTime = res.data.time.nome;
+                                    let anoInicio = res.data.time.temporada_inicial;
+                                    let mediaPontuacao = pontuacaoGeral / (rodadaAtual - 1);
 
-                    axios
-                        .get(env.API_URL + "time/id/" + time_id)
-                        .then(async(res) => {
-                            let pontuacaoGeral = res.data.pontos_campeonato;
-                            let patrimonio = res.data.patrimonio;
-                            let nomeCartoleiro = res.data.time.nome_cartola;
-                            let nomeTime = res.data.time.nome;
-                            let anoInicio = res.data.time.temporada_inicial;
-                            let mediaPontuacao = pontuacaoGeral / (rodadaAtual - 1);
+                                    const options = {
+                                        unsafeMime: true,
+                                    };
+                                    const escudo = await MessageMedia.fromUrl(
+                                        res.data.time.url_escudo_png,
+                                        options
+                                    );
 
-                            const options = {
-                                unsafeMime: true,
-                            };
-                            const escudo = await MessageMedia.fromUrl(
-                                res.data.time.url_escudo_png,
-                                options
-                            );
-
-                            client.sendMessage(message.from, escudo, {
-                                caption: `🛡️ *${nomeTime}* \n🎩 Cartoleiro: ${nomeCartoleiro}\n📈 Pontuação geral: ${pontuacaoGeral.toFixed(
-                        2
-                      )}\n💰 Patrimônio: ${patrimonio}\n📊 Média na temporada: ${mediaPontuacao.toFixed(
-                        2
-                      )}\n_Cartoleiro desde ${anoInicio}_`,
-                            });
-                        })
-                        .catch((err) => {
+                                    client.sendMessage(message.from, escudo, {
+                                        caption: `🛡️ *${nomeTime}* \n🎩 Cartoleiro: ${nomeCartoleiro}\n📈 Pontuação geral: ${pontuacaoGeral.toFixed(
+                      2
+                    )}\n💰 Patrimônio: ${patrimonio}\n📊 Média na temporada: ${mediaPontuacao.toFixed(
+                      2
+                    )}\n_Cartoleiro desde ${anoInicio}_`,
+                                    });
+                                })
+                                .catch((err) => {
+                                    message.reply(
+                                        "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
+                                    );
+                                });
+                        } else {
                             message.reply(
-                                "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
+                                "⚠️🤖❓ Desculpe, não consegui localizar esse time :( Verifique a grafia e tente novamente."
                             );
-                        });
-                })
-                .catch((err) => {
-                    message.reply(
-                        "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
-                    );
-                });
-
-        }).catch((err) => {
-            message.reply(
-                "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
-            );
-        })
+                        }
+                    })
+                    .catch((err) => {
+                        message.reply(
+                            "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
+                        );
+                    });
+            })
+            .catch((err) => {
+                message.reply(
+                    "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
+                );
+            });
     }
 });
 
