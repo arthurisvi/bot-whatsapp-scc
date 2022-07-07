@@ -76,7 +76,11 @@ client.on("message", async(message) => {
                     }
                     // trazer a pontuação de um time especifico
                     else if (message.body.includes("!parcial")) {
-                        let time = message.body.replace("!parcial", "").replace(/^./, "");
+                        let time = message.body
+                            .replace("!parcial", "")
+                            .replace(/^./, "")
+                            .normalize("NFD")
+                            .replace(/[\u0300-\u036f]/g, "");
                         let slug = time.replace(/ /g, "-").toLowerCase();
 
                         axios.get(env.API_URL + "times?q=" + slug).then((res) => {
@@ -229,7 +233,11 @@ client.on("message", async(message) => {
 
     //trazer algumas informações de um time
     if (message.body.includes("!info")) {
-        let time = message.body.replace("!info", "").replace(/^./, "");
+        let time = message.body
+            .replace("!info", "")
+            .replace(/^./, "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
         let slug = time.replace(/ /g, "-").toLowerCase();
 
         axios
