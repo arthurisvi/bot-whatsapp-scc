@@ -1,6 +1,9 @@
 const qrcode = require("qrcode-terminal");
 const { Client, LocalAuth } = require("whatsapp-web.js");
 const axios = require("axios");
+const market = require('./market.js')
+const env = require("./config/config");
+
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -20,7 +23,6 @@ client.on("ready", () => {
     console.log("Client is ready!");
 });
 
-const API_URL = "https://api.cartolafc.globo.com/";
 
 client.on("message", (message) => {
     if (message.body === "!menu") {
@@ -39,7 +41,7 @@ client.on("message", (message) => {
             jogador = `${arrayPesquisa[1]} ${arrayPesquisa[2]}`;
         }
 
-        axios.get(API_URL + "atletas/pontuados").then((res) => {
+        axios.get(env.API_URL + "atletas/pontuados").then((res) => {
             let jogadores = res.data.atletas;
 
             Object.keys(jogadores).forEach((item) => {
@@ -59,7 +61,7 @@ client.on("message", (message) => {
         let time = message.body.replace("!parcial", "").replace(/^./, "");
         let slug = time.replace(/ /g, "-").toLowerCase();
 
-        axios.get(API_URL + "times?q=" + slug).then((res) => {
+        axios.get(env.API_URL + "times?q=" + slug).then((res) => {
             let timeCartola = res.data;
             var id_time = null;
             var filtroJogadores = [];
@@ -76,11 +78,11 @@ client.on("message", (message) => {
                 message.reply("Desculpe, não consegui localizar esse time :(");
             }
 
-            axios.get(API_URL + "mercado/status").then((res) => {
+            axios.get(env.API_URL + "mercado/status").then((res) => {
                 let rodada = res.data.rodada_atual;
 
                 if (id_time !== null) {
-                    axios.get(`${API_URL}time/id/${id_time}/${rodada}`).then((res) => {
+                    axios.get(`${env.API_URL}time/id/${id_time}/${rodada}`).then((res) => {
                         var escalacao = res.data.atletas;
                         var reservas = res.data.reservas;
                         var capitao = res.data.capitao_id;
@@ -94,7 +96,7 @@ client.on("message", (message) => {
                             nomesJogadoresEscalacao.push(jogador);
                         }
 
-                        axios.get(API_URL + "atletas/pontuados").then((res) => {
+                        axios.get(env.API_URL + "atletas/pontuados").then((res) => {
                             var jogadoresPontuacao = res.data.atletas;
 
                             Object.keys(jogadoresPontuacao).forEach((jogador) => {
@@ -167,7 +169,7 @@ client.on("message", (message) => {
     }
     //pesquisar os mais escalados
     else if (message.body === "!mais-escalados") {
-        axios.get(API_URL + "mercado/destaques").then((res) => {
+        axios.get(env.API_URL + "mercado/destaques").then((res) => {
             var arrayMaisEscalados = [];
 
             let maisEscalados = res.data;
