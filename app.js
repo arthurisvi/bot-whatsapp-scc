@@ -84,6 +84,10 @@ client.on("message", async(message) => {
                         let slug = time.replace(/ /g, "-").toLowerCase();
 
                         axios.get(env.API_URL + "times?q=" + slug).then((res) => {
+
+                            if (res.data.length !== 0) {
+
+                            }
                             let timeCartola = res.data;
                             var id_time = null;
                             var filtroJogadores = [];
@@ -244,51 +248,86 @@ client.on("message", async(message) => {
             .get(env.API_URL + "mercado/status")
             .then((res) => {
                 let rodadaAtual = res.data.rodada_atual;
+                let rodadas = Array.from(Array(rodadaAtual - 1), (e, i) => i + 1);
 
                 axios
                     .get(env.API_URL + "times?q=" + slug)
                     .then(async(res) => {
-                        let timeCartola = res.data.filter((item) => item.slug === slug);
+                        if (res.data.length !== 0) {
+                            let timeCartola = res.data.filter(
+                                (item) => item.slug === slug
+                            );
 
-                        if (timeCartola) {
-                            let time_id = timeCartola[0].time_id;
+                            if (timeCartola) {
+                                let time_id = timeCartola[0].time_id;
+                                let maiorPontuacao = 0;
+                                let menorPontuacao = 0;
+                                let pontuacoes = [];
 
-                            axios
-                                .get(env.API_URL + "time/id/" + time_id)
-                                .then(async(res) => {
-                                    let pontuacaoGeral = res.data.pontos_campeonato;
-                                    let patrimonio = res.data.patrimonio;
-                                    let nomeCartoleiro = res.data.time.nome_cartola;
-                                    let nomeTime = res.data.time.nome;
-                                    let anoInicio = res.data.time.temporada_inicial;
-                                    let mediaPontuacao = pontuacaoGeral / (rodadaAtual - 1);
+                                axios
+                                    .get(env.API_URL + "time/id/" + time_id)
+                                    .then(async(res) => {
+                                        let pontuacaoGeral = res.data.pontos_campeonato;
+                                        let patrimonio = res.data.patrimonio;
+                                        let nomeCartoleiro = res.data.time.nome_cartola;
+                                        let nomeTime = res.data.time.nome;
+                                        let anoInicio = res.data.time.temporada_inicial;
+                                        let mediaPontuacao =
+                                            pontuacaoGeral / (rodadaAtual - 1);
 
-                                    const options = {
-                                        unsafeMime: true,
-                                    };
-                                    const escudo = await MessageMedia.fromUrl(
-                                        res.data.time.url_escudo_png,
-                                        options
-                                    );
+                                        const options = {
+                                            unsafeMime: true,
+                                        };
+                                        const escudo = await MessageMedia.fromUrl(
+                                            res.data.time.url_escudo_png,
+                                            options
+                                        );
 
-                                    client.sendMessage(message.from, escudo, {
-                                        caption: `🛡️ *${nomeTime}* \n🎩 Cartoleiro: ${nomeCartoleiro}\n📈 Pontuação geral: ${pontuacaoGeral.toFixed(
-                      2
-                    )}\n💰 Patrimônio: ${patrimonio}\n📊 Média na temporada: ${mediaPontuacao.toFixed(
-                      2
-                    )}\n_Cartoleiro desde ${anoInicio}_`,
+                                        const promiseArray = rodadas.map((rdd) =>
+                                            axios.get(
+                                                env.API_URL +
+                                                "/time/id/" +
+                                                time_id +
+                                                "/" +
+                                                rdd
+                                            )
+                                        );
+
+                                        (await Promise.all(promiseArray)).map((res) =>
+                                            pontuacoes.push(res.data.pontos)
+                                        );
+
+                                        maiorPontuacao = Math.max(...pontuacoes);
+                                        menorPontuacao = Math.min(...pontuacoes);
+
+                                        client.sendMessage(message.from, escudo, {
+                                            caption: `🛡️ *${nomeTime}* \n🎩 Cartoleiro: ${nomeCartoleiro}\n_Cartoleiro desde ${anoInicio}_\n\n🧮 *Estatísticas da temporada*\n\n📊 Pontuação geral: ${pontuacaoGeral.toFixed(
+                                    2
+                                  )}\n💰 Patrimônio: ${patrimonio}\n📊 Média por rodada: ${mediaPontuacao.toFixed(
+                                    2
+                                  )}\n📈 Maior pontuação: ${maiorPontuacao.toFixed(
+                                    2
+                                  )}\n📉 Menor pontuação: ${menorPontuacao.toFixed(
+                                    2
+                                  )}`,
+                                        });
+                                    })
+                                    .catch((err) => {
+                                        message.reply(
+                                            "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
+                                        );
                                     });
-                                })
-                                .catch((err) => {
-                                    message.reply(
-                                        "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
-                                    );
-                                });
+                            } else {
+                                message.reply(
+                                    "⚠️🤖❓ Desculpe, não consegui localizar esse time :( Verifique a grafia e tente novamente."
+                                );
+                            }
                         } else {
                             message.reply(
                                 "⚠️🤖❓ Desculpe, não consegui localizar esse time :( Verifique a grafia e tente novamente."
                             );
                         }
+
                     })
                     .catch((err) => {
                         message.reply(
