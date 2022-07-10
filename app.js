@@ -48,6 +48,11 @@ client.on("message", async(message) => {
                             jogador = `${arrayPesquisa[1]} ${arrayPesquisa[2]}`;
                         }
 
+                        jogador = jogador
+                            .normalize("NFD")
+                            .toLowerCase()
+                            .replace(/[\u0300-\u036f]/g, "");
+
                         axios
                             .get(env.API_URL + "atletas/pontuados")
                             .then((res) => {
@@ -55,20 +60,19 @@ client.on("message", async(message) => {
 
                                 Object.keys(jogadores).forEach((item) => {
                                     if (
-                                        jogadores[item].apelido.normalize("NFD").toLowerCase() ===
-                                        jogador.normalize("NFD").toLowerCase()
+                                        jogadores[item].apelido
+                                        .normalize("NFD")
+                                        .toLowerCase()
+                                        .replace(/[\u0300-\u036f]/g, "") === jogador
                                     ) {
                                         message.reply(
                                             `A pontuação parcial do jogador ${jogadores[item].apelido} é: ${jogadores[item].pontuacao}`
-                                        );
-                                    } else {
-                                        throw new Error(
-                                            "⚠️🤖❓\nOps, jogador não encontrado. Verifique a grafia e se o jogador está em campo ou já atuou na rodada."
                                         );
                                     }
                                 });
                             })
                             .catch((err) => {
+                                console.log(err);
                                 message.reply(
                                     "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
                                 );
@@ -84,21 +88,21 @@ client.on("message", async(message) => {
                         let slug = time.replace(/ /g, "-").toLowerCase();
 
                         axios.get(env.API_URL + "times?q=" + slug).then((res) => {
-
-                            if (res.data.length !== 0) {
-
-                            }
                             let timeCartola = res.data;
                             var id_time = null;
                             var filtroJogadores = [];
+                            var filtroReservas = [];
+
                             var todosJogadores = [];
                             var nomesJogadores = [];
                             var nomesJogadoresEscalacao = [];
 
                             if (timeCartola) {
                                 Object.keys(timeCartola).forEach((item) => {
-                                    id_time = timeCartola[item].time_id;
-                                    nome_time = timeCartola[item].nome;
+                                    if (timeCartola[item].slug === slug) {
+                                        nome_time = timeCartola[item].nome;
+                                        id_time = timeCartola[item].time_id;
+                                    }
                                 });
                             } else {
                                 message.reply(
@@ -156,11 +160,41 @@ client.on("message", async(message) => {
                                                             nomesJogadores.push(futebolista);
                                                         }
                                                     }
+
+                                                    for (reservaEscalado in reservas) {
+                                                        if (
+                                                            reservas[
+                                                                reservaEscalado
+                                                            ].clube_id ===
+                                                            jogadoresPontuacao[
+                                                                jogador
+                                                            ].clube_id &&
+                                                            reservas[
+                                                                reservaEscalado
+                                                            ].apelido ===
+                                                            jogadoresPontuacao[
+                                                                jogador
+                                                            ].apelido &&
+                                                            reservas[
+                                                                reservaEscalado
+                                                            ].posicao_id ===
+                                                            jogadoresPontuacao[
+                                                                jogador
+                                                            ].posicao_id
+                                                        ) {
+                                                            filtroReservas.push(
+                                                                jogadoresPontuacao[
+                                                                    jogador
+                                                                ]
+                                                            );
+                                                        }
+                                                    }
                                                 });
 
                                                 let apenasEmA = nomesJogadoresEscalacao.filter(
                                                     comparer(nomesJogadores)
                                                 );
+
                                                 let apenasEmB = nomesJogadores.filter(
                                                     comparer(nomesJogadoresEscalacao)
                                                 );
@@ -174,25 +208,119 @@ client.on("message", async(message) => {
                                                     );
                                                 }
 
+                                                // console.log(reservas);
                                                 //reservas.filter(reserva => posicoesSubstituicao.includes(reserva.posicao_id)
 
+                                                // console.log(filtroReservas)
+
+                                                titularesNaoJogaram = titularesNaoJogaram.map((item) => {
+                                                    return {
+                                                        posicao_id: item.posicao_id,
+                                                        apelido: item.apelido,
+                                                        pontuacao: 0.0
+                                                    }
+                                                })
+
+                                                for (titular in titularesNaoJogaram) {
+                                                    filtroJogadores.push(titularesNaoJogaram[titular]);
+                                                }
+
+                                                filtroReservas = filtroReservas.sort((a, b) => {
+                                                    return a.posicao_id < b.posicao_id ? -1 : a.posicao_id > b.posicao_id ? 1 : 0;
+                                                });
+
+                                                filtroJogadores = filtroJogadores.sort((a, b) => {
+                                                    return a.posicao_id < b.posicao_id ? -1 : a.posicao_id > b.posicao_id ? 1 : 0;
+                                                });
+
+                                                filtroJogadores = filtroJogadores.map((item) => {
+
+                                                    return {
+                                                        jogador: item.apelido,
+                                                        pontuacao: item.pontuacao,
+                                                    }
+                                                })
+
+                                                filtroReservas =
+                                                    filtroReservas.map(
+                                                        (item) => {
+                                                            return {
+                                                                jogador: item.apelido,
+                                                                pontuacao: item.pontuacao,
+                                                            };
+                                                        }
+                                                    );
+
                                                 let somaPontuacao = 0;
+
                                                 for (pontuacao in filtroJogadores) {
                                                     somaPontuacao += filtroJogadores[pontuacao].pontuacao;
                                                 }
+
+                                                filtroJogadores =
+                                                    filtroJogadores.map(
+                                                        (item) => {
+                                                            return {
+                                                                jogador: item.jogador + " - " + item.pontuacao
+                                                            };
+                                                        }
+                                                    );
+
+                                                filtroReservas =
+                                                    filtroReservas.map(
+                                                        (item) => {
+                                                            return {
+                                                                jogador: item.jogador +
+                                                                    " - " +
+                                                                    item.pontuacao,
+                                                            };
+                                                        }
+                                                    );
+
                                                 message.reply(
-                                                    `A pontuação parcial de ${nome_time} é: ${somaPontuacao.toFixed(
-                            2
-                          )} pontos`
+                                                    `Time: *${nome_time}*\nParcial: *${somaPontuacao.toFixed(
+                                                    2
+                                                  )}*\n\nTitulares:\n` +
+                                                    JSON.stringify(
+                                                        filtroJogadores
+                                                    )
+                                                    .replace(/,/g, "\n")
+                                                    .replace(/"/g, "")
+                                                    .replace(/jogador/g, "")
+                                                    .replace(/{/g, "")
+                                                    .replace(/}/g, "")
+                                                    .replace(/:/g, "")
+                                                    .replace(
+                                                        /[\[\]!'@,><|://\\;&*()_+=]/g,
+                                                        ""
+                                                    )
+
+                                                    +
+                                                    "\n\nReservas:\n" +
+                                                    JSON.stringify(
+                                                        filtroReservas
+                                                    )
+                                                    .replace(/,/g, "\n")
+                                                    .replace(/"/g, "")
+                                                    .replace(/jogador/g, "")
+                                                    .replace(/{/g, "")
+                                                    .replace(/}/g, "")
+                                                    .replace(/:/g, "")
+                                                    .replace(
+                                                        /[\[\]!'@,><|://\\;&*()_+=]/g,
+                                                        ""
+                                                    )
                                                 );
                                             })
                                             .catch((err) => {
+                                                console.log(err)
                                                 message.reply(
                                                     "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
                                                 );
                                             });
                                     })
                                     .catch((err) => {
+                                        console.log(err)
                                         message.reply(
                                             "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
                                         );
@@ -208,6 +336,7 @@ client.on("message", async(message) => {
             }
         })
         .catch((err) => {
+            console.log(err)
             message.reply(
                 "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
             );
@@ -254,9 +383,7 @@ client.on("message", async(message) => {
                     .get(env.API_URL + "times?q=" + slug)
                     .then(async(res) => {
                         if (res.data.length !== 0) {
-                            let timeCartola = res.data.filter(
-                                (item) => item.slug === slug
-                            );
+                            let timeCartola = res.data.filter((item) => item.slug === slug);
 
                             if (timeCartola) {
                                 let time_id = timeCartola[0].time_id;
@@ -272,25 +399,18 @@ client.on("message", async(message) => {
                                         let nomeCartoleiro = res.data.time.nome_cartola;
                                         let nomeTime = res.data.time.nome;
                                         let anoInicio = res.data.time.temporada_inicial;
-                                        let mediaPontuacao =
-                                            pontuacaoGeral / (rodadaAtual - 1);
+                                        let mediaPontuacao = pontuacaoGeral / (rodadaAtual - 1);
 
-                                        const options = {
-                                            unsafeMime: true,
-                                        };
-                                        const escudo = await MessageMedia.fromUrl(
-                                            res.data.time.url_escudo_png,
-                                            options
-                                        );
+                                        // const options = {
+                                        //     unsafeMime: true,
+                                        // };
+                                        // const escudo = await MessageMedia.fromUrl(
+                                        //     res.data.time.url_escudo_png,
+                                        //     options
+                                        // );
 
                                         const promiseArray = rodadas.map((rdd) =>
-                                            axios.get(
-                                                env.API_URL +
-                                                "/time/id/" +
-                                                time_id +
-                                                "/" +
-                                                rdd
-                                            )
+                                            axios.get(env.API_URL + "/time/id/" + time_id + "/" + rdd)
                                         );
 
                                         (await Promise.all(promiseArray)).map((res) =>
@@ -300,17 +420,27 @@ client.on("message", async(message) => {
                                         maiorPontuacao = Math.max(...pontuacoes);
                                         menorPontuacao = Math.min(...pontuacoes);
 
-                                        client.sendMessage(message.from, escudo, {
-                                            caption: `🛡️ *${nomeTime}* \n🎩 Cartoleiro: ${nomeCartoleiro}\n_Cartoleiro desde ${anoInicio}_\n\n🧮 *Estatísticas da temporada*\n\n📊 Pontuação geral: ${pontuacaoGeral.toFixed(
-                                    2
-                                  )}\n💰 Patrimônio: ${patrimonio}\n📊 Média por rodada: ${mediaPontuacao.toFixed(
-                                    2
-                                  )}\n📈 Maior pontuação: ${maiorPontuacao.toFixed(
-                                    2
-                                  )}\n📉 Menor pontuação: ${menorPontuacao.toFixed(
-                                    2
-                                  )}`,
-                                        });
+                                        message.reply(
+                                            `🛡️ *${nomeTime}* \n🎩 Cartoleiro: ${nomeCartoleiro}\n_Cartoleiro desde ${anoInicio}_\n\n🧮 *Estatísticas da temporada*\n\n📊 Pontuação geral: ${pontuacaoGeral.toFixed(
+                        2
+                      )}\n💰 Patrimônio: ${patrimonio}\n📊 Média por rodada: ${mediaPontuacao.toFixed(
+                        2
+                      )}\n📈 Maior pontuação: ${maiorPontuacao.toFixed(
+                        2
+                      )}\n📉 Menor pontuação: ${menorPontuacao.toFixed(2)}`
+                                        );
+
+                                        //         client.sendMessage(message.from, escudo, {
+                                        //             caption: `🛡️ *${nomeTime}* \n🎩 Cartoleiro: ${nomeCartoleiro}\n_Cartoleiro desde ${anoInicio}_\n\n🧮 *Estatísticas da temporada*\n\n📊 Pontuação geral: ${pontuacaoGeral.toFixed(
+                                        //     2
+                                        //   )}\n💰 Patrimônio: ${patrimonio}\n📊 Média por rodada: ${mediaPontuacao.toFixed(
+                                        //     2
+                                        //   )}\n📈 Maior pontuação: ${maiorPontuacao.toFixed(
+                                        //     2
+                                        //   )}\n📉 Menor pontuação: ${menorPontuacao.toFixed(
+                                        //     2
+                                        //   )}`,
+                                        //         });
                                     })
                                     .catch((err) => {
                                         message.reply(
@@ -327,7 +457,6 @@ client.on("message", async(message) => {
                                 "⚠️🤖❓ Desculpe, não consegui localizar esse time :( Verifique a grafia e tente novamente."
                             );
                         }
-
                     })
                     .catch((err) => {
                         message.reply(
