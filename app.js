@@ -96,6 +96,8 @@ client.on("message", async(message) => {
                             var todosJogadores = [];
                             var nomesJogadores = [];
                             var nomesJogadoresEscalacao = [];
+                            var jogadoresReservas = [];
+                            var reservasJogadores = [];
 
                             if (timeCartola) {
                                 Object.keys(timeCartola).forEach((item) => {
@@ -127,6 +129,19 @@ client.on("message", async(message) => {
                                             nomesJogadoresEscalacao.push(jogador);
                                         }
 
+                                        for (banco in reservas) {
+                                            const jogadorRes = {
+                                                posicao_id: reservas[banco]
+                                                    .posicao_id,
+                                                apelido: reservas[banco]
+                                                    .apelido,
+                                                clube_id: reservas[banco]
+                                                    .clube_id,
+                                            };
+
+                                            jogadoresReservas.push(jogadorRes)
+                                        }
+
                                         axios
                                             .get(env.API_URL + "atletas/pontuados")
                                             .then((res) => {
@@ -149,6 +164,20 @@ client.on("message", async(message) => {
                                                             ) {
                                                                 jogadoresPontuacao[jogador].pontuacao =
                                                                     jogadoresPontuacao[jogador].pontuacao * 2;
+
+                                                                jogadoresPontuacao[
+                                                                    jogador
+                                                                ] = {
+                                                                    pontuacao: jogadoresPontuacao[
+                                                                        jogador
+                                                                    ].pontuacao,
+                                                                    apelido: jogadoresPontuacao[jogador].apelido,
+                                                                    clube_id: jogadoresPontuacao[jogador].clube_id,
+                                                                    posicao_id: jogadoresPontuacao[jogador].posicao_id,
+                                                                    entrou_em_campo: true,
+                                                                    isCapitain: true
+                                                                };
+
                                                             }
                                                             filtroJogadores.push(jogadoresPontuacao[jogador]);
 
@@ -187,6 +216,21 @@ client.on("message", async(message) => {
                                                                     jogador
                                                                 ]
                                                             );
+
+                                                            const futebolistaRes = {
+                                                                posicao_id: reservas[
+                                                                    reservaEscalado
+                                                                ].posicao_id,
+                                                                apelido: reservas[
+                                                                    reservaEscalado
+                                                                ].apelido,
+                                                                clube_id: reservas[
+                                                                    reservaEscalado
+                                                                ].clube_id,
+                                                            };
+                                                            reservasJogadores.push(
+                                                                futebolistaRes
+                                                            );
                                                         }
                                                     }
                                                 });
@@ -199,7 +243,16 @@ client.on("message", async(message) => {
                                                     comparer(nomesJogadoresEscalacao)
                                                 );
 
+                                                let apenasEmC = reservasJogadores.filter(
+                                                    comparer(jogadoresReservas)
+                                                )
+
+                                                let apenasEmD = jogadoresReservas.filter(
+                                                    comparer(reservasJogadores)
+                                                )
+
                                                 let titularesNaoJogaram = apenasEmA.concat(apenasEmB);
+                                                let reservasNaoEntraram = apenasEmC.concat(apenasEmD);
 
                                                 let posicoesSubstituicao = [];
                                                 for (naoJogou in titularesNaoJogaram) {
@@ -221,8 +274,23 @@ client.on("message", async(message) => {
                                                     }
                                                 })
 
+                                                reservasNaoEntraram =
+                                                    reservasNaoEntraram.map(
+                                                        (item) => {
+                                                            return {
+                                                                posicao_id: item.posicao_id,
+                                                                apelido: item.apelido,
+                                                                pontuacao: 0.0,
+                                                            };
+                                                        }
+                                                    );
+
                                                 for (titular in titularesNaoJogaram) {
                                                     filtroJogadores.push(titularesNaoJogaram[titular]);
+                                                }
+
+                                                for (reserva in reservasNaoEntraram) {
+                                                    filtroReservas.push(reservasNaoEntraram[reserva])
                                                 }
 
                                                 filtroReservas = filtroReservas.sort((a, b) => {
@@ -238,7 +306,9 @@ client.on("message", async(message) => {
                                                     return {
                                                         jogador: item.apelido,
                                                         pontuacao: item.pontuacao,
-                                                    }
+                                                        isCapitain: item.isCapitain ?
+                                                            " ©️" : "",
+                                                    };
                                                 })
 
                                                 filtroReservas =
@@ -261,7 +331,7 @@ client.on("message", async(message) => {
                                                     filtroJogadores.map(
                                                         (item) => {
                                                             return {
-                                                                jogador: item.jogador + " - " + item.pontuacao
+                                                                jogador: item.jogador + " | " + item.pontuacao + item.isCapitain
                                                             };
                                                         }
                                                     );
@@ -271,7 +341,7 @@ client.on("message", async(message) => {
                                                         (item) => {
                                                             return {
                                                                 jogador: item.jogador +
-                                                                    " - " +
+                                                                    " | " +
                                                                     item.pontuacao,
                                                             };
                                                         }
@@ -291,7 +361,7 @@ client.on("message", async(message) => {
                                                     .replace(/}/g, "")
                                                     .replace(/:/g, "")
                                                     .replace(
-                                                        /[\[\]!'@,><|://\\;&*()_+=]/g,
+                                                        /[\[\]!'@,><://\\;&*()_+=]/g,
                                                         ""
                                                     )
 
@@ -307,7 +377,7 @@ client.on("message", async(message) => {
                                                     .replace(/}/g, "")
                                                     .replace(/:/g, "")
                                                     .replace(
-                                                        /[\[\]!'@,><|://\\;&*()_+=]/g,
+                                                        /[\[\]!'@,><://\\;&*()_+=]/g,
                                                         ""
                                                     )
                                                 );
