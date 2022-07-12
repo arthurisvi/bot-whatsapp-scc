@@ -2,6 +2,10 @@ const qrcode = require("qrcode-terminal");
 const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 const axios = require("axios");
 const env = require("./config/config");
+const https = require("https");
+
+axios.defaults.timeout = 60000;
+axios.defaults.httpsAgent = new https.Agent({ keepAlive: true });
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -79,16 +83,16 @@ client.on("message", async(message) => {
                                                 .replace(/:/g, " - ");
 
                                             message.reply(
-                                                `A pontuação parcial do jogador ${jogadores[item].apelido} é: ${jogadores[item].pontuacao}\n\n_Scouts:_\n${scoutsJogador}\n\n_🤖 Parciais fornecidas por SCCoty (wa.me/19282855516)_`
+                                                `A pontuação parcial de ${jogadores[item].apelido} é: ${jogadores[item].pontuacao}\n\n_Scouts:_\n${scoutsJogador}\n\n_🤖 Parciais fornecidas por SCCoty (wa.me/19282855516)_`
                                             );
                                         }
                                     });
                                 })
                                 .catch((err) => {
                                     console.log(err);
-                                    message.reply(
-                                        "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
-                                    );
+                                    // message.reply(
+                                    //     "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
+                                    // );
                                 });
                         }
                         // trazer a pontuação de um time especifico
@@ -446,16 +450,16 @@ client.on("message", async(message) => {
                                                 })
                                                 .catch((err) => {
                                                     console.log(err);
-                                                    message.reply(
-                                                        "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
-                                                    );
+                                                    // message.reply(
+                                                    //     "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
+                                                    // );
                                                 });
                                         })
                                         .catch((err) => {
                                             console.log(err);
-                                            message.reply(
-                                                "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
-                                            );
+                                            // message.reply(
+                                            //     "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
+                                            // );
                                         });
                                 }
                             });
@@ -469,9 +473,9 @@ client.on("message", async(message) => {
             })
             .catch((err) => {
                 console.log(err);
-                message.reply(
-                    "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
-                );
+                // message.reply(
+                //     "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
+                // );
             });
         //pesquisar os mais escalados
 
@@ -492,9 +496,9 @@ client.on("message", async(message) => {
                     );
                 })
                 .catch((err) => {
-                    message.reply(
-                        "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
-                    );
+                    // message.reply(
+                    //     "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
+                    // );
                 });
         }
 
@@ -565,9 +569,9 @@ client.on("message", async(message) => {
                                             );
                                         })
                                         .catch((err) => {
-                                            message.reply(
-                                                "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
-                                            );
+                                            // message.reply(
+                                            //     "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
+                                            // );
                                         });
                                 } else {
                                     message.reply(
@@ -581,15 +585,15 @@ client.on("message", async(message) => {
                             }
                         })
                         .catch((err) => {
-                            message.reply(
-                                "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
-                            );
+                            // message.reply(
+                            //     "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
+                            // );
                         });
                 })
                 .catch((err) => {
-                    message.reply(
-                        "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
-                    );
+                    // message.reply(
+                    //     "⚠️🤖❓\nDesculpe, algo de errado aconteceu no meu sistema e não pude realizar sua solicitação :("
+                    // );
                 });
         }
     }
