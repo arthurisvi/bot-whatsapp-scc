@@ -6,4 +6,6 @@ dotenv.config({
 
 module.exports = {
     API_URL: process.env.API_URL,
+    ID_GROUP_SCC1: process.env.ID_GROUP_SCC1,
+    ID_GROUP_SCC2: process.env.ID_GROUP_SCC2
 }
