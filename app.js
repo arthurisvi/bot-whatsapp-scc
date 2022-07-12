@@ -28,7 +28,8 @@ client.on("ready", () => {
 client.on("message", async(message) => {
     if (
         message.from === env.ID_GROUP_SCC1 ||
-        message.from === env.ID_GROUP_SCC2
+        message.from === env.ID_GROUP_SCC2 ||
+        message.from === env.ID_GROUP_TEST
     ) {
         if (message.body === "!menu") {
             message.reply(
