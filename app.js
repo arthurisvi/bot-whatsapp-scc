@@ -22,6 +22,7 @@ client.on("ready", () => {
 });
 
 client.on("message", async(message) => {
+    // if (message.from === "558198693799-1517851623@g.us") {
     if (message.body === "!menu") {
         message.reply(
             "🤖 *SCCoty* - Inteligência Artificial do Cartola! 🎩\n\n_Olá, eu sou a Sccoty, uma IA criada para te manter informado sobre parciais e outras informações relacionadas ao Cartola FC._\n\n📲 *Lista de comandos*\n!pontuacao _[nome do jogador]_\n!parcial _[nome do time]_\n!info _[nome do time]_\n!mais-escalados\n\n🎩 *Sobre o SCC*\nO SCC é uma organização responsável por gerenciar campeonatos premiados de Cartola FC.\n\nConfira 👇🏻\nhttps://sccartola.com/competicoes/sccvip.php\n\n👨🏻‍💻 *Contato do desenvolvedor*\nwa.me/5581996420780 (Arthur Isvi)"
@@ -65,8 +66,19 @@ client.on("message", async(message) => {
                                         .toLowerCase()
                                         .replace(/[\u0300-\u036f]/g, "") === jogador
                                     ) {
+                                        let scoutsJogador = JSON.stringify(jogadores[item].scout).replace(/,/g, "\n")
+                                            .replace(/"/g, "")
+                                            .replace(/{/g, "")
+                                            .replace(/}/g, "")
+                                            .replace(/:/g, " - ")
+
+
                                         message.reply(
-                                            `A pontuação parcial do jogador ${jogadores[item].apelido} é: ${jogadores[item].pontuacao}`
+                                            `A pontuação parcial do jogador ${
+                                            jogadores[item].apelido
+                                          } é: ${
+                                            jogadores[item].pontuacao
+                                          }\n\n_Scouts:_\n${scoutsJogador}\n\n_🤖 Parciais fornecidas por SCCoty (wa.me/19282855516)_`
                                         );
                                     }
                                 });
@@ -164,6 +176,8 @@ client.on("message", async(message) => {
                                             .get(env.API_URL + "atletas/pontuados")
                                             .then((res) => {
                                                 var jogadoresPontuacao = res.data.atletas;
+                                                var idCptPosicao = null;
+                                                var capitaoSaiu = false;
 
                                                 Object.keys(jogadoresPontuacao).forEach((jogador) => {
                                                     todosJogadores.push(jogadoresPontuacao[jogador]);
@@ -182,6 +196,8 @@ client.on("message", async(message) => {
                                                             ) {
                                                                 jogadoresPontuacao[jogador].pontuacao =
                                                                     jogadoresPontuacao[jogador].pontuacao * 2;
+
+                                                                idCptPosicao = jogadoresPontuacao[jogador].posicao_id
 
                                                                 jogadoresPontuacao[
                                                                     jogador
@@ -320,6 +336,9 @@ client.on("message", async(message) => {
                                                 axios.get(env.API_URL + "time/substituicoes/" + id_time).then((res) => {
 
                                                     for (jogador in res.data) {
+                                                        if (res.data[jogador].saiu.posicao_id === idCptPosicao) {
+                                                            capitaoSaiu = true;
+                                                        }
                                                         arrayTitularSaiu.push({ jogador: res.data[jogador].saiu.apelido })
                                                         arrayReservaEntrou.push({ jogador: res.data[jogador].entrou.apelido })
                                                     }
@@ -342,12 +361,16 @@ client.on("message", async(message) => {
                                                                 return {
                                                                     jogador: item.apelido,
                                                                     pontuacao: item.pontuacao,
+                                                                    posicao_id: item.posicao_id
                                                                 };
                                                             }
                                                         );
 
                                                     let somaPontuacaoBanco = 0;
                                                     for (reserva in filtroReservas) {
+                                                        if (filtroReservas[reserva].posicao_id === idCptPosicao && capitaoSaiu) {
+                                                            filtroReservas[reserva].pontuacao = filtroReservas[reserva].pontuacao * 2;
+                                                        }
                                                         for (res in arrayReservaEntrou) {
                                                             if (arrayReservaEntrou[res].jogador === filtroReservas[reserva].jogador) {
                                                                 somaPontuacaoBanco += filtroReservas[reserva].pontuacao
@@ -391,15 +414,12 @@ client.on("message", async(message) => {
 
                                                     message.reply(
                                                         `Time: *${nome_time}*\nParcial: *${somaPontuacao.toFixed(
-                                                           2
-                                                         )}*\n\nTitulares:\n` +
+                                                        2
+                                                      )}*\n\nTitulares:\n` +
                                                         JSON.stringify(
                                                             filtroJogadores
                                                         )
-                                                        .replace(
-                                                            /,/g,
-                                                            "\n"
-                                                        )
+                                                        .replace(/,/g, "\n")
                                                         .replace(/"/g, "")
                                                         .replace(
                                                             /jogador/g,
@@ -416,10 +436,7 @@ client.on("message", async(message) => {
                                                         JSON.stringify(
                                                             filtroReservas
                                                         )
-                                                        .replace(
-                                                            /,/g,
-                                                            "\n"
-                                                        )
+                                                        .replace(/,/g, "\n")
                                                         .replace(/"/g, "")
                                                         .replace(
                                                             /jogador/g,
@@ -431,7 +448,8 @@ client.on("message", async(message) => {
                                                         .replace(
                                                             /[\[\]!'@,><://\\;&*()_+=]/g,
                                                             ""
-                                                        )
+                                                        ) +
+                                                        "\n\n_🤖 Parciais fornecidas por SCCoty (wa.me/19282855516)_"
                                                     );
 
                                                 }).catch((err) => {
@@ -484,7 +502,9 @@ client.on("message", async(message) => {
                 });
 
                 let mensagem = arrayMaisEscalados.toString().replace(/,/g, "\n");
-                message.reply(`👕 Os *mais escalados* da rodada são:\n\n${mensagem}`);
+                message.reply(
+                    `👕 Os *mais escalados* da rodada são:\n\n${mensagem}\n\n_🤖 Via SCCoty (wa.me/19282855516)_`
+                );
             })
             .catch((err) => {
                 message.reply(
@@ -514,7 +534,7 @@ client.on("message", async(message) => {
                         if (res.data.length !== 0) {
                             let timeCartola = res.data.filter((item) => item.slug === slug || item.nome.toLowerCase() === time.toLowerCase())
 
-                            if (timeCartola) {
+                            if (timeCartola && timeCartola.length !== 0) {
                                 let time_id = timeCartola[0].time_id;
                                 let maiorPontuacao = 0;
                                 let menorPontuacao = 0;
@@ -543,12 +563,14 @@ client.on("message", async(message) => {
 
                                         message.reply(
                                             `🛡️ *${nomeTime}* \n🎩 Cartoleiro: ${nomeCartoleiro}\n_Cartoleiro desde ${anoInicio}_\n\n🧮 *Estatísticas da temporada*\n\n📊 Pontuação geral: ${pontuacaoGeral.toFixed(
-                        2
-                      )}\n💰 Patrimônio: ${patrimonio}\n📊 Média por rodada: ${mediaPontuacao.toFixed(
-                        2
-                      )}\n📈 Maior pontuação: ${maiorPontuacao.toFixed(
-                        2
-                      )}\n📉 Menor pontuação: ${menorPontuacao.toFixed(2)}`
+                                            2
+                                          )}\n💰 Patrimônio: ${patrimonio}\n📊 Média por rodada: ${mediaPontuacao.toFixed(
+                                            2
+                                          )}\n📈 Maior pontuação: ${maiorPontuacao.toFixed(
+                                            2
+                                          )}\n📉 Menor pontuação: ${menorPontuacao.toFixed(
+                                            2
+                                          )}\n\n_🤖 Via SCCoty (wa.me/19282855516)_`
                                         );
                                     })
                                     .catch((err) => {
@@ -579,6 +601,7 @@ client.on("message", async(message) => {
                 );
             });
     }
+    // }
 });
 
 function comparer(otherArray) {
