@@ -20,10 +20,11 @@ Para resolver tal problemática, desenvolvi um sistema de BOT via Whatsapp em qu
 - Biblioteca whatsapp-web.js 
 - Axios
 
-## Como instalar 
+## Como utilizar 
 
 - Clone esse repositório
+- Altere o arquivo .env e adicione o ID do grupo em que deseja utilizar em um dos parâmetros "ID_GROUP_SCC", ou simplesmente remova o código que está dentro do If que começa na linha 29 do app.js; Essa verificação faz com que o bot só funcione em grupos específicos, caso deseje utilizar em qualquer chat, só precisa remover essa validação.  
 - Abra a pasta do projeto e rode o comando "npm install"
 - Rode o comando "npm run dev", caso esteja em ambiente de testes; ou "npm run start" caso não
-- Escaneie o QR CODE que irá aparecer no terminal (essa ação só será necessária uma única vez)
+- Escaneie o QR CODE que irá aparecer no terminal (essa ação só será necessária uma única vez), realize essa ação como se estivesse logando no Whatsapp Web.
 - Aproveite o BOT :)
